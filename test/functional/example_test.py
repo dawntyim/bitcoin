@@ -212,7 +212,28 @@ class ExampleTest(BitcoinTestFramework):
         with p2p_lock:
             for block in peer_receiving.block_receive_map.values():
                 assert_equal(block, 1)
+        
+        '''
+        Exercises
+        try getting node 1 to mine another block, send it to node 2, and check that node 2 received it.
+        ''' 
 
+        self.generatetoaddress(self.nodes[1], 1, self.nodes[1].get_deterministic_priv_key().address)
+        best_block = self.nodes[1].getblock(self.nodes[1].getbestblockhash())
+        tip = int(self.nodes[1].getbestblockhash(), 16)
+        height = best_block["height"] + 1
+        block_time = best_block["time"] + 1
+
+        self.log.info("Wait for node1 to reach current tip (height 11) using RPC")
+        self.nodes[2].waitforblockheight(11)
+
+        self.log.info("Connect node2 and node1")
+        self.connect_nodes(1, 2)
+
+        self.log.info("Wait for node2 to receive all the blocks from node1")
+        self.sync_all()
+
+        assert_equal(int(self.nodes[1].getbestblockhash(), 16), int(self.nodes[2].getbestblockhash(), 16))
 
 if __name__ == '__main__':
     ExampleTest().main()
